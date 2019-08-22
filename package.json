@@ -1,0 +1,11 @@
+{
+  "name": "snake",
+  "version": "1.0.0",
+  "description": "Snake game",
+  "main": "index.js",
+  "author": "Bryan Powell",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc ./src/game.ts --outDir ./dist/ && cp ./src/index.html ./dist/"
+  }
+}
