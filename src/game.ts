@@ -17,6 +17,32 @@ interface GameComponent {
     draw(canvasCtx: CanvasRenderingContext2D);
 }
 
+declare interface Math {
+    sign(x: number): number;
+}
+
+enum Keys {
+    UP = 38,
+    DOWN = 40,
+    LEFT = 37,
+    RIGHT = 39
+}
+
+class InputManager {
+    private keys: boolean[] = [];
+
+    constructor() {
+        window.addEventListener('keydown', e => this.keys[e.keyCode] = true);
+        window.addEventListener('keyup', e => this.keys[e.keyCode] = false);
+    }
+
+    public keyPressed(key: Keys | number) {
+        return this.keys[key];
+    }
+}
+
+const Input = new InputManager();
+
 function startGame() {
     const scene = new Scene(400, 400);
     scene.setColor({ fill: 'white', stroke: 'black' });
@@ -50,15 +76,31 @@ class Snake implements GameComponent {
     }
 
     public update() {
+        this.getInput();
+        const { x: dx, y: dy } = this.velocity;
         const head = this.snakeParts[0];
-        const dx = this.velocity.x > 0 ? 2*this.partWidth + this.velocity.x : 0;
-        const dy = this.velocity.y > 0 ? 2*this.partWidth + this.velocity.y : 0;
+        const diameter = 2 * this.partWidth;
         const newHead: Point = {
-            x: head.x + dx,
-            y: head.y + dy
+            x: (dx !== 0 ? Math.sign(dx)*(diameter + dx) : 0) + head.x,
+            y: (dy !== 0 ? Math.sign(dy)*(diameter + dy) : 0) + head.y
         };
         this.snakeParts.unshift(newHead);
         this.snakeParts.pop();
+    }
+
+    private getInput(): void {
+        const { x: dx, y: dy } = this.velocity;
+        const movingX = dx !== 0;
+        const movingY = dy !== 0;
+        if (Input.keyPressed(Keys.UP) && !movingY) {
+            this.velocity = { x: 0, y: -1 };
+        } else if (Input.keyPressed(Keys.DOWN) && !movingY) {
+            this.velocity = { x: 0, y: 1 };
+        } else if (Input.keyPressed(Keys.LEFT) && !movingX) {
+            this.velocity = { x: -1, y: 0 };
+        } else if (Input.keyPressed(Keys.RIGHT) && !movingX) {
+            this.velocity = { x: 1, y: 0 };
+        }
     }
 
     public draw(canvasCtx: CanvasRenderingContext2D) {
