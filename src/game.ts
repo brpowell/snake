@@ -1,6 +1,4 @@
-// import { Color, Point, GameComponent } from './types';
-
-const FRAMERATE = 10;
+let FRAMERATE = 10;
 
 type Color = {
     fill: string;
@@ -10,11 +8,6 @@ type Color = {
 type Point = {
     x: number;
     y: number;
-}
-
-interface GameComponent {
-    update();
-    draw(canvasCtx: CanvasRenderingContext2D);
 }
 
 declare interface Math {
@@ -28,64 +21,99 @@ enum Keys {
     RIGHT = 39
 }
 
-class InputManager {
-    private keys: boolean[] = [];
-
-    constructor() {
-        window.addEventListener('keydown', e => this.keys[e.keyCode] = true);
-        window.addEventListener('keyup', e => this.keys[e.keyCode] = false);
-    }
-
-    public keyPressed(key: Keys | number) {
-        return this.keys[key];
-    }
-}
-
-const Input = new InputManager();
+let Input: InputManager;
+let PlayArea: Scene;
 
 function startGame() {
-    const scene = new Scene(400, 400);
-    scene.setColor({ fill: 'white', stroke: 'black' });
-    const snake = new Snake(5, 7);
-    snake.setVelocity(1, 0);
-    scene.addComponent(snake);
-    scene.start();
+    Input = new InputManager();
+    PlayArea = new Scene(400, 400);
+    PlayArea.setColor({ fill: 'white', stroke: 'black' });
+
+    const snake = new Snake(5, 15);
+    PlayArea.addComponent(snake);
+
+    const foodSpawner = new FoodSpawner();
+    foodSpawner.update();
+    PlayArea.addComponent(foodSpawner);
+
+    PlayArea.start(FRAMERATE);
 }
 
-class Snake implements GameComponent {
+class GameComponent {
+    public readonly id: string;
+
+    constructor(id: string) {
+        this.id = id;
+    }
+
+    // GameComponents don't have to be smart or visible
+    public update() {}
+    public draw(canvasCtx: CanvasRenderingContext2D) {}
+}
+
+class Snake extends GameComponent {
     private snakeParts: Point[];
-    private partWidth: number;
     private velocity: Point;
     private color: Color = { fill: 'yellowgreen', stroke: 'black' };
+    public readonly partWidth: number;
+    private score: number = 0;
 
     constructor(startingParts: number, partWidth: number) {
+        super('snake');
         this.partWidth = partWidth;
         this.snakeParts = [];
-        this.velocity = { x: 0, y: 0 };
+        this.velocity = { x: partWidth, y: 0 };
         for (let i = 0; i < startingParts; i++) {
             this.snakeParts.push({ x: 150 - (i * 2 * partWidth), y: 150 });
         }
     }
 
-    public setColor(color: Color) {
-        this.color = color;
+    public getParts(): Point[] {
+        return this.snakeParts;
     }
 
-    public setVelocity(x: number, y: number) {
-        this.velocity = { x, y }; 
+    public getScore(): number {
+        return this.score;
     }
 
     public update() {
         this.getInput();
+
         const { x: dx, y: dy } = this.velocity;
         const head = this.snakeParts[0];
-        const diameter = 2 * this.partWidth;
         const newHead: Point = {
-            x: (dx !== 0 ? Math.sign(dx)*(diameter + dx) : 0) + head.x,
-            y: (dy !== 0 ? Math.sign(dy)*(diameter + dy) : 0) + head.y
+            x: head.x + dx,
+            y: head.y + dy
         };
+        const { width: canvasWidth, height: canvasHeight } = PlayArea.canvas;
+        if (newHead.x > canvasWidth) {
+            newHead.x = 0;
+        } else if (newHead.x < 0) {
+            newHead.x = canvasWidth - (canvasWidth % this.partWidth);
+        } else if (newHead.y > canvasHeight) {
+            newHead.y = 0;
+        } else if (newHead.y < 0) {
+            newHead.y = canvasHeight - (canvasHeight % this.partWidth);
+        }
         this.snakeParts.unshift(newHead);
-        this.snakeParts.pop();
+
+        if (this.ateFood()) {
+            const foodSpawner = PlayArea.getComponent('foodSpawner') as FoodSpawner;
+            foodSpawner.foodSpawned = false;
+            this.score += 1;
+            document.getElementById('score').innerHTML = String(this.score);
+            if (this.score % 3 === 0 && this.score > 0) {
+                FRAMERATE += 0.2;
+                PlayArea.start(FRAMERATE);
+            }
+        } else {
+            this.snakeParts.pop();
+        }
+    }
+
+    private ateFood(): boolean {
+        const { x: foodX, y: foodY } = (PlayArea.getComponent('food') as Food).location;
+        return this.snakeParts[0].x === foodX && this.snakeParts[0].y === foodY;
     }
 
     private getInput(): void {
@@ -93,13 +121,13 @@ class Snake implements GameComponent {
         const movingX = dx !== 0;
         const movingY = dy !== 0;
         if (Input.keyPressed(Keys.UP) && !movingY) {
-            this.velocity = { x: 0, y: -1 };
+            this.velocity = { x: 0, y: -this.partWidth };
         } else if (Input.keyPressed(Keys.DOWN) && !movingY) {
-            this.velocity = { x: 0, y: 1 };
+            this.velocity = { x: 0, y: this.partWidth };
         } else if (Input.keyPressed(Keys.LEFT) && !movingX) {
-            this.velocity = { x: -1, y: 0 };
+            this.velocity = { x: -this.partWidth, y: 0 };
         } else if (Input.keyPressed(Keys.RIGHT) && !movingX) {
-            this.velocity = { x: 1, y: 0 };
+            this.velocity = { x: this.partWidth, y: 0 };
         }
     }
 
@@ -108,18 +136,69 @@ class Snake implements GameComponent {
         this.snakeParts.forEach(({ x, y }, index) => {
             canvasCtx.fillStyle = index === 0 ? 'red' : this.color.fill;
             canvasCtx.beginPath();
-            canvasCtx.arc(x, y, this.partWidth, 0, 2*Math.PI);
+            canvasCtx.arc(x, y, this.partWidth / 2, 0, 2*Math.PI);
             canvasCtx.fill();
             canvasCtx.stroke();
         });
     }
 }
 
+class FoodSpawner extends GameComponent {
+    public foodSpawned: boolean = false;
+
+    constructor() {
+        super('foodSpawner');
+    }
+
+    public update() {
+        if (!this.foodSpawned) {
+            const snake = PlayArea.getComponent('snake') as Snake;
+            const { partWidth: pw } = snake;
+            let isOnSnake = true;
+            let foodX;
+            let foodY;
+            while (isOnSnake) {
+                foodX = this.randomCoordinate(0, PlayArea.canvas.width - pw, pw);
+                foodY = this.randomCoordinate(0, PlayArea.canvas.height - pw, pw);
+                isOnSnake = snake.getParts().some(
+                    part => part.x === foodX && part.y === foodY
+                );
+            }
+            PlayArea.addComponent(new Food(foodX, foodY));
+            this.foodSpawned = true;
+        }
+    }
+
+    private randomCoordinate(min: number, max: number, snakePartWidth: number): number {
+        return Math.round((Math.random() * (max - min) + min) / snakePartWidth) * snakePartWidth;
+    }
+}
+
+class Food extends GameComponent {
+    public location: Point;
+    
+    constructor(x: number, y: number) {
+        super('food');
+        this.location = { x, y };
+    }
+
+    public draw(canvasCtx: CanvasRenderingContext2D) {
+        const { partWidth } = (PlayArea.getComponent('snake') as Snake);
+        const { x, y } = this.location;
+        canvasCtx.fillStyle = 'yellow';
+        canvasCtx.strokeStyle = 'black';
+        canvasCtx.beginPath();
+        canvasCtx.arc(x, y, (partWidth / 2) - 2, 0, 2*Math.PI);
+        canvasCtx.fill();
+        canvasCtx.stroke();
+    }
+}
+
 class Scene {
-    private canvas: HTMLCanvasElement;
+    public readonly canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
     private color: Color;
-    private components: GameComponent[] = [];
+    private components: { [key: string]: GameComponent } = {};
     private interval: number;
 
     constructor(width: number, height: number) {
@@ -134,20 +213,30 @@ class Scene {
         this.color = color;
     }
 
-    public addComponent(component: GameComponent) {
-        this.components.push(component);
+    public addComponent(component: GameComponent): void {
+        this.components[component.id] = component;
     }
 
-    public start() {
-        this.interval = setInterval(() => { this.frameStep() }, 1000 / FRAMERATE);
+    public getComponent(id: string): GameComponent {
+        const component = this.components[id];
+        if (!component) {
+            throw new Error(`GameComponent with id ${id} does not exist`);
+        }
+        return component;
+    }
+
+    public start(frameRate: number) {
+        console.log(1000 / frameRate);
+        clearInterval(this.interval);
+        this.interval = setInterval(() => { this.frameStep() }, 1000 / frameRate);
     }
     
     private frameStep() {
         this._clear();
-        this.components.forEach(component => {
-            component.update();
-            component.draw(this.context);
-        })
+        Object.keys(this.components).forEach(k => {
+            this.components[k].update();
+            this.components[k].draw(this.context);
+        });
     }
 
     private _clear = () => {
@@ -156,5 +245,18 @@ class Scene {
         this.context.strokeStyle = this.color.stroke;
         this.context.fillRect(0, 0, width, height);
         this.context.strokeRect(0, 0, width, height);
+    }
+}
+
+class InputManager {
+    private keys: boolean[] = [];
+
+    constructor() {
+        window.addEventListener('keydown', e => this.keys[e.keyCode] = true);
+        window.addEventListener('keyup', e => this.keys[e.keyCode] = false);
+    }
+
+    public keyPressed(key: Keys | number) {
+        return this.keys[key];
     }
 }
