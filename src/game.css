@@ -1,0 +1,21 @@
+body {
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+canvas {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+/* #score {
+} */
+
+#retry > a {
+    padding: 10px 26px;
+    background-color: #505050;
+    color: white;
+    border-radius: 4px;
+    border: 2px solid #77cbf3;
+    cursor: pointer;
+}

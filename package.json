@@ -6,7 +6,7 @@
   "author": "Bryan Powell",
   "license": "MIT",
   "scripts": {
-    "build": "tsc ./src/game.ts --outDir ./dist/ && cp ./src/index.html ./dist/",
+    "build": "tsc ./src/game.ts --outDir ./dist/ && cp ./src/index.html ./dist/ && cp ./src/game.css ./dist/",
     "start": "open ./dist/index.html"
   }
 }

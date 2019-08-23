@@ -25,6 +25,10 @@ let Input: InputManager;
 let PlayArea: Scene;
 
 function startGame() {
+    if (PlayArea) {
+        PlayArea.stop();
+        PlayArea.canvas.remove();
+    }
     Input = new InputManager();
     PlayArea = new Scene(400, 400);
     PlayArea.setColor({ fill: 'white', stroke: 'black' });
@@ -57,6 +61,7 @@ class Snake extends GameComponent {
     private color: Color = { fill: 'yellowgreen', stroke: 'black' };
     public readonly partWidth: number;
     private score: number = 0;
+    private lost: boolean = false;
 
     constructor(startingParts: number, partWidth: number) {
         super('snake');
@@ -64,7 +69,7 @@ class Snake extends GameComponent {
         this.snakeParts = [];
         this.velocity = { x: partWidth, y: 0 };
         for (let i = 0; i < startingParts; i++) {
-            this.snakeParts.push({ x: 150 - (i * 2 * partWidth), y: 150 });
+            this.snakeParts.push({ x: 150 - (i * partWidth), y: 150 });
         }
     }
 
@@ -77,13 +82,41 @@ class Snake extends GameComponent {
     }
 
     public update() {
-        this.getInput();
+        if (this.didCrash()) {
+            this.lost = true;
+            this.velocity = { x: 0, y: 0 };
+            PlayArea.start(FRAMERATE + 2);
+        }
 
-        const { x: dx, y: dy } = this.velocity;
-        const head = this.snakeParts[0];
+        if (this.lost) {
+            if (this.snakeParts.length > 0) {
+                this.snakeParts.splice(0, 1);
+            } else {
+                PlayArea.stop();
+                // document.body.appendChild()
+            }
+        } else {
+            this.getInput();
+            this.move();
+            if (this.didEat()) {
+                const foodSpawner = PlayArea.getComponent('foodSpawner') as FoodSpawner;
+                foodSpawner.foodSpawned = false;
+                this.score += 1;
+                if (this.score % 3 === 0 && this.score > 0) {
+                    FRAMERATE += 0.2;
+                    PlayArea.start(FRAMERATE);
+                }
+            } else {
+                this.snakeParts.pop();
+            }
+            document.getElementById('score').innerHTML = `Score: ${String(this.score)}`;
+        }
+    }
+
+    private move() {
         const newHead: Point = {
-            x: head.x + dx,
-            y: head.y + dy
+            x: this.snakeParts[0].x + this.velocity.x,
+            y: this.snakeParts[0].y + this.velocity.y
         };
         const { width: canvasWidth, height: canvasHeight } = PlayArea.canvas;
         if (newHead.x > canvasWidth) {
@@ -96,22 +129,16 @@ class Snake extends GameComponent {
             newHead.y = canvasHeight - (canvasHeight % this.partWidth);
         }
         this.snakeParts.unshift(newHead);
-
-        if (this.ateFood()) {
-            const foodSpawner = PlayArea.getComponent('foodSpawner') as FoodSpawner;
-            foodSpawner.foodSpawned = false;
-            this.score += 1;
-            document.getElementById('score').innerHTML = String(this.score);
-            if (this.score % 3 === 0 && this.score > 0) {
-                FRAMERATE += 0.2;
-                PlayArea.start(FRAMERATE);
-            }
-        } else {
-            this.snakeParts.pop();
-        }
     }
 
-    private ateFood(): boolean {
+    private didCrash(): boolean {
+        const head = this.snakeParts[0];
+        return this.snakeParts.slice(1).some(
+            part => head.x === part.x && head.y === part.y
+        );
+    }
+
+    private didEat(): boolean {
         const { x: foodX, y: foodY } = (PlayArea.getComponent('food') as Food).location;
         return this.snakeParts[0].x === foodX && this.snakeParts[0].y === foodY;
     }
@@ -134,7 +161,7 @@ class Snake extends GameComponent {
     public draw(canvasCtx: CanvasRenderingContext2D) {
         canvasCtx.strokeStyle = this.color.stroke;
         this.snakeParts.forEach(({ x, y }, index) => {
-            canvasCtx.fillStyle = index === 0 ? 'red' : this.color.fill;
+            canvasCtx.fillStyle = index === 0 && !this.lost ? 'red' : this.color.fill;
             canvasCtx.beginPath();
             canvasCtx.arc(x, y, this.partWidth / 2, 0, 2*Math.PI);
             canvasCtx.fill();
@@ -206,7 +233,7 @@ class Scene {
         this.canvas.width = width;
         this.canvas.height = height;
         this.context = this.canvas.getContext('2d');
-        document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+        document.body.insertBefore(this.canvas, document.getElementById('retry'));
     }
 
     public setColor(color: Color) {
@@ -226,9 +253,12 @@ class Scene {
     }
 
     public start(frameRate: number) {
-        console.log(1000 / frameRate);
-        clearInterval(this.interval);
+        this.stop();
         this.interval = setInterval(() => { this.frameStep() }, 1000 / frameRate);
+    }
+
+    public stop() {
+        clearInterval(this.interval);
     }
     
     private frameStep() {
