@@ -2,11 +2,20 @@
   "name": "snake",
   "version": "1.0.0",
   "description": "Snake game",
-  "main": "index.js",
   "author": "Bryan Powell",
   "license": "MIT",
+  "private": true,
   "scripts": {
-    "build": "tsc ./src/game.ts --outDir ./dist/ && cp ./src/index.html ./dist/ && cp ./src/game.css ./dist/",
+    "build": "tsc ./src/game.ts --outDir ./dist/ && cp ./src/index.html ./dist/ && cp ./src/styles/game.css ./dist/",
     "start": "open ./dist/index.html"
+  },
+  "devDependencies": {
+    "css-loader": "^3.2.0",
+    "html-webpack-plugin": "^3.2.0",
+    "style-loader": "^1.0.0",
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.5.3",
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
   }
 }

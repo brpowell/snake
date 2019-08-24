@@ -24,25 +24,6 @@ enum Keys {
 let Input: InputManager;
 let PlayArea: Scene;
 
-function startGame() {
-    if (PlayArea) {
-        PlayArea.stop();
-        PlayArea.canvas.remove();
-    }
-    Input = new InputManager();
-    PlayArea = new Scene(400, 400);
-    PlayArea.setColor({ fill: 'white', stroke: 'black' });
-
-    const snake = new Snake(5, 15);
-    PlayArea.addComponent(snake);
-
-    const foodSpawner = new FoodSpawner();
-    foodSpawner.update();
-    PlayArea.addComponent(foodSpawner);
-
-    PlayArea.start(FRAMERATE);
-}
-
 class GameComponent {
     public readonly id: string;
 
@@ -182,8 +163,8 @@ class FoodSpawner extends GameComponent {
             const snake = PlayArea.getComponent('snake') as Snake;
             const { partWidth: pw } = snake;
             let isOnSnake = true;
-            let foodX;
-            let foodY;
+            let foodX: number;
+            let foodY: number;
             while (isOnSnake) {
                 foodX = this.randomCoordinate(0, PlayArea.canvas.width - pw, pw);
                 foodY = this.randomCoordinate(0, PlayArea.canvas.height - pw, pw);
@@ -233,7 +214,8 @@ class Scene {
         this.canvas.width = width;
         this.canvas.height = height;
         this.context = this.canvas.getContext('2d');
-        document.body.insertBefore(this.canvas, document.getElementById('retry'));
+        const canvasBody = document.getElementById('canvasBody');
+        canvasBody.appendChild(this.canvas);
     }
 
     public setColor(color: Color) {
@@ -290,3 +272,24 @@ class InputManager {
         return this.keys[key];
     }
 }
+
+function startGame() {
+    if (PlayArea) {
+        PlayArea.stop();
+        PlayArea.canvas.remove();
+    }
+    Input = new InputManager();
+    PlayArea = new Scene(400, 400);
+    PlayArea.setColor({ fill: 'white', stroke: 'black' });
+
+    const snake = new Snake(5, 15);
+    PlayArea.addComponent(snake);
+
+    const foodSpawner = new FoodSpawner();
+    foodSpawner.update();
+    PlayArea.addComponent(foodSpawner);
+
+    PlayArea.start(FRAMERATE);
+}
+
+startGame();

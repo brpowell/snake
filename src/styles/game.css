@@ -1,0 +1,46 @@
+body {
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+canvas {
+    padding: 10px;
+    border-radius: 29px;
+    background-color: #505050;
+}
+
+.game-body {
+    margin: 0;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.game-body__row {
+    margin-bottom: 10px;
+}
+
+.game-title {
+    font-size: 50px;
+    font-weight: bold;
+}
+
+#score {
+    font-size: 24px;
+}
+
+#retry > button {
+    padding: 10px 26px;
+    background-color: #505050;
+    color: white;
+    border-radius: 4px;
+    /* border: 2px solid #77cbf3; */
+    cursor: pointer;
+    font-size: 18px;
+    outline: #77cbf3;
+}
+
+#retry > button:hover {
+    border-color: #77cbf3;
+}
