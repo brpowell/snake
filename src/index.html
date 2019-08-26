@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
   <head>
-  	<title>Snake</title>
+    <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
-
     <body>
         <div class="game-body">
             <div id="score" class="game-body__row">Score: 0</div>
             <div id="canvasBody" class="game-body__row"></div>
-            <div id="retry" class="game-body__row"><button onclick="startGame()">Retry</button></div>
+            <div class="game-body__row"><button id="retry">Retry</button></div>
         </div>            
     </body>
   <body>

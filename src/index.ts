@@ -1,17 +1,20 @@
 import { Scene } from './engine';
 import { Colors } from './engine/types';
-import { Snake } from './game/snake';
-import { FoodSpawner } from './game/food';
+import { FoodSpawner, Snake } from './game';
 import './styles/index.css';
 
 export let MainScene: Scene;
+
+document.getElementById('retry')!.onclick = () => {
+    startGame();
+}
 
 export function startGame() {
     if (MainScene) {
         MainScene.destroy();
     }
     MainScene = new Scene(400, 400);
-    MainScene.stroke = Colors.BLACK;
+    MainScene.strokeColor = Colors.BLACK;
 
     const snake = new Snake(5, 15);
     MainScene.addComponent(snake);

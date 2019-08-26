@@ -3,6 +3,9 @@ import { Snake } from './snake';
 import { Point } from '../engine/types';
 import { MainScene } from '..';
 
+/**
+ * A meta component responsible for spawning snake food
+ */
 export class FoodSpawner extends GameComponent {
     public foodSpawned: boolean = false;
 
@@ -12,21 +15,32 @@ export class FoodSpawner extends GameComponent {
 
     public update() {
         if (!this.foodSpawned) {
-            const snake = MainScene.getComponent('snake') as Snake;
-            const { partWidth: pw } = snake;
-            let isOnSnake = true;
-            while (isOnSnake) {
-                const foodX = this.randomCoordinate(0, MainScene.width - pw, pw);
-                const foodY = this.randomCoordinate(0, MainScene.height - pw, pw);
-                isOnSnake = snake.getParts().some(
-                    part => part.x === foodX && part.y === foodY
-                );
-                if (!isOnSnake) {
-                    MainScene.addComponent(new Food(foodX, foodY));
-                    this.foodSpawned = true;
-                }
+            MainScene.addComponent(
+                new Food(this.generatePosition())
+            );
+            this.foodSpawned = true;
+        }
+    }
+
+    /**
+     * Randomly generate a position for food pellet
+     */
+    private generatePosition(): Point {
+        let x = 0;
+        let y = 0;
+        let isOnSnake = true;
+        const { parts, partWidth: pw } = MainScene.getComponent('snake') as Snake;
+        while (isOnSnake) {
+            x = this.randomCoordinate(0, MainScene.width - pw, pw);
+            y = this.randomCoordinate(0, MainScene.height - pw, pw);
+            isOnSnake = parts.some(
+                (part: Point) => part.x === x && part.y === y
+            );
+            if (!isOnSnake) {
+                break;
             }
         }
+        return { x, y };
     }
 
     private randomCoordinate(min: number, max: number, snakePartWidth: number): number {
@@ -34,17 +48,20 @@ export class FoodSpawner extends GameComponent {
     }
 }
 
+/**
+ * A food pellet for snake
+ */
 export class Food extends GameComponent {
-    public location: Point;
+    public position: Point;
     
-    constructor(x: number, y: number) {
+    constructor(position: Point) {
         super('food');
-        this.location = { x, y };
+        this.position = position;
     }
 
     public draw(canvasCtx: CanvasRenderingContext2D) {
-        const { partWidth } = (MainScene.getComponent('snake') as Snake);
-        const { x, y } = this.location;
+        const { partWidth } = MainScene.getComponent('snake') as Snake;
+        const { x, y } = this.position;
         canvasCtx.fillStyle = 'yellow';
         canvasCtx.strokeStyle = 'black';
         canvasCtx.beginPath();

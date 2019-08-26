@@ -26,7 +26,7 @@ export enum Colors {
 }
 
 /**
- * Keyboard constats
+ * Keyboard constants
  */
 export enum Keys {
     /** Up arrow key */

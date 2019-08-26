@@ -2,6 +2,9 @@ import { Color, Colors } from './types';
 import { GameComponent } from './component';
 import { setInterval, clearInterval } from 'timers';
 
+/**
+ * Object for managing GameComponents and the canvas
+ */
 export class Scene {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
@@ -30,6 +33,7 @@ export class Scene {
         return this.canvas.height;
     }
 
+    /** Frames to render per second */
     get framerate(): number {
         return this._framerate;
     }
@@ -44,18 +48,28 @@ export class Scene {
         this._framerate = framerate;
     }
 
-    set stroke(color: Colors | string) {
+    /** Border color of scene */
+    set strokeColor(color: Colors | string) {
         this.color.stroke = color;
     }
 
-    set fill(color: Colors | string) {
+    /** Background color of scene */
+    set fillColor(color: Colors | string) {
         this.color.fill = color;
     }
 
+    /**
+     * Add a game component to the scene
+     * @param component 
+     */
     public addComponent(component: GameComponent): void {
         this.components[component.id] = component;
     }
 
+    /**
+     * Returns a GameComponent from the scene with the given id.
+     * @param id of GameComponent
+     */
     public getComponent(id: string): GameComponent {
         const component = this.components[id];
         if (!component) {
@@ -64,6 +78,10 @@ export class Scene {
         return component;
     }
 
+    /**
+     * Begin rendering scene
+     * @param framerate of scene
+     */
     public start(framerate: number) {
         const canvasBody = document.getElementById('canvasBody');
         if (!canvasBody) {
@@ -73,20 +91,17 @@ export class Scene {
         this.framerate = framerate;
     }
 
-    public setFramerate(frameRate: number) {
-        if (this.interval) {
-            clearInterval(this.interval)
-        }
-        if (frameRate > 0) {
-            this.interval = setInterval(() => { this.frameStep() }, 1000 / frameRate)
-        }
-    }
-
+    /**
+     * Stop the scene from rendering and destroy canvas element
+     */
     public destroy() {
         this.framerate = 0;
         this.canvas.remove();
     }
     
+    /**
+     * Update and draw every GameComponent in the scene
+     */
     private frameStep() {
         this._clear();
         Object.keys(this.components).forEach(k => {
