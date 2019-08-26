@@ -5,9 +5,17 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "firefox",
+            "request": "launch",
+            "reAttach": true,
+            "name": "Debug Game (Firefox)",
+            "url": "http://localhost:9000/",
+            "webRoot": "${workspaceFolder}"
+        },
+        {
             "type": "chrome",
             "request": "launch",
-            "name": "Debug Game",
+            "name": "Debug Game (Chrome)",
             "url": "http://localhost:9000/",
             "webRoot": "${workspaceFolder}",
         }

@@ -5,12 +5,12 @@ import { setInterval, clearInterval } from 'timers';
 export class Scene {
     private canvas: HTMLCanvasElement;
     private context: CanvasRenderingContext2D;
-    private color: Color;
+    private color: Color = { fill: 'white', stroke: 'white' };
     private components: { [key: string]: GameComponent } = {};
     private interval?: NodeJS.Timeout;
+    private _framerate: number = 60;
 
-    constructor(width: number, height: number, color?: Color) {
-        this.color = color || { fill: 'white', stroke: 'white' };
+    constructor(width: number, height: number) {
         this.canvas = document.createElement("canvas");
         this.canvas.width = width;
         this.canvas.height = height;
@@ -28,6 +28,20 @@ export class Scene {
 
     get height() {
         return this.canvas.height;
+    }
+
+    get framerate(): number {
+        return this._framerate;
+    }
+
+    set framerate(framerate: number) {
+        if (this.interval) {
+            clearInterval(this.interval)
+        }
+        if (framerate > 0) {
+            this.interval = setInterval(() => { this.frameStep() }, 1000 / framerate)
+        }
+        this._framerate = framerate;
     }
 
     set stroke(color: Colors | string) {
@@ -50,13 +64,13 @@ export class Scene {
         return component;
     }
 
-    public start(frameRate: number) {
+    public start(framerate: number) {
         const canvasBody = document.getElementById('canvasBody');
         if (!canvasBody) {
             throw new Error('Missing canvasBody element to attach canvas to');
         }
         canvasBody.appendChild(this.canvas);
-        this.setFramerate(frameRate);
+        this.framerate = framerate;
     }
 
     public setFramerate(frameRate: number) {
@@ -69,7 +83,7 @@ export class Scene {
     }
 
     public destroy() {
-        this.setFramerate(0);
+        this.framerate = 0;
         this.canvas.remove();
     }
     

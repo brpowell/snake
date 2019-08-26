@@ -8,9 +8,9 @@
   "scripts": {
     "start": "webpack-dev-server --mode development",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "develop": "webpack --mode development --watch",
     "build": "webpack --mode production",
-    "clean:dist": "rm -r dist"
+    "clean": "rm -r dist",
+    "clean:all": "git clean -xfd"
   },
   "devDependencies": {
     "css-loader": "^3.2.0",
